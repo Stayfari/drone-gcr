@@ -14,27 +14,24 @@ pipeline:
       event: push
 
   publish:
-    # coverage:
-    #   when:
-    #     branch: master
-    master:
-      image: plugins/docker
-      username: ${DOCKER_USER}
-      password: ${DOCKER_PASS}
-      email: ${DOCKER_EMAIL}
-      repo: stayfari/drone-gcr
-      tag: latest
-      when:
-        branch: master
-    develop:
-      image: plugins/docker
-      username: ${DOCKER_USER}
-      password: ${DOCKER_PASS}
-      email: ${DOCKER_EMAIL}
-      repo: stayfari/drone-gcr
-      tag: develop
-      when:
-        branch: develop
+    image: plugins/docker
+    username: ${DOCKER_USER}
+    password: ${DOCKER_PASS}
+    email: ${DOCKER_EMAIL}
+    repo: stayfari/drone-gcr
+    tag: latest
+    when:
+      branch: master
+
+  publish: 
+    image: plugins/docker
+    username: ${DOCKER_USER}
+    password: ${DOCKER_PASS}
+    email: ${DOCKER_EMAIL}
+    repo: stayfari/drone-gcr
+    tag: develop
+    when:
+      branch: develop
 
 plugin:
   name: Google Container Registry
