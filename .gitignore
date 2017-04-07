@@ -27,6 +27,4 @@ coverage.out
 drone-gcr
 
 .vscode
-vendor
-!vendor/manifest
 .DS_Store
