@@ -1,39 +1,47 @@
-build:
-  image: golang:1.5
-  environment:
-    - CGO_ENABLED=0
-  commands:
-    - make deps
-    - make vet
-    - make build
-    - make test
+workspace:
+  base: /go
 
-publish:
-  coverage:
+pipeline:
+  test:
+    image: golang:1.7.5
+    environment:
+      - CGO_ENABLED=0
+      - GO15VENDOREXPERIMENT=1
+    commands:
+      - go vet
+      - go test
+      - go build -ldflags "-s -w -X main.version=$DRONE_BUILD_NUMBER"
     when:
-      branch: master
-  docker:
-    username: $$DOCKER_USER
-    password: $$DOCKER_PASS
-    email: $$DOCKER_EMAIL
-    repo: plugins/drone-gcr
-    tag: latest
-    when:
-      branch: master
-  docker:
-    username: $$DOCKER_USER
-    password: $$DOCKER_PASS
-    email: $$DOCKER_EMAIL
-    repo: plugins/drone-gcr
-    tag: develop
-    when:
-      branch: develop
+      event: push
+
+  publish:
+    # coverage:
+    #   when:
+    #     branch: master
+    master:
+      image: plugins/docker
+      username: ${DOCKER_USER}
+      password: ${DOCKER_PASS}
+      email: ${DOCKER_EMAIL}
+      repo: stayfari/drone-gcr
+      tag: latest
+      when:
+        branch: master
+    develop:
+      image: plugins/docker
+      username: ${DOCKER_USER}
+      password: ${DOCKER_PASS}
+      email: ${DOCKER_EMAIL}
+      repo: stayfari/drone-gcr
+      tag: develop
+      when:
+        branch: develop
 
 plugin:
   name: Google Container Registry
   desc: Build and publish images to Google Container Registry
   type: publish
-  image: plugins/drone-gcr
+  image: stayfari/drone-gcr
   labels:
     - docker
     - image

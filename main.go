@@ -2,151 +2,310 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
-	"time"
 
-	"github.com/drone/drone-plugin-go/plugin"
+	"github.com/codegangsta/cli"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-type Docker struct {
-	Registry string   `json:"registry"`
-	Storage  string   `json:"storage_driver"`
-	Token    string   `json:"token"`
-	Repo     string   `json:"repo"`
-	Tag      StrSlice `json:"tag"`
-	File     string   `json:"file"`
-	Context  string   `json:"context"`
-}
-
-var (
-	buildCommit string
-)
+var version string // build number set at compile-time
 
 func main() {
-	fmt.Printf("Drone GCR Plugin built from %s\n", buildCommit)
+	app := cli.NewApp()
+	app.Name = "Google Container Registry"
+	//TODO SC: Define usage
+	app.Usage = "my plugin usage"
+	app.Action = run
+	app.Version = version
+	app.Flags = []cli.Flag{
 
-	workspace := plugin.Workspace{}
-	build := plugin.Build{}
-	vargs := Docker{}
+		//
+		// repo args
+		//
 
-	plugin.Param("workspace", &workspace)
-	plugin.Param("build", &build)
-	plugin.Param("vargs", &vargs)
-	plugin.MustParse()
+		cli.StringFlag{
+			Name:   "repo.fullname",
+			Usage:  "repository full name",
+			EnvVar: "DRONE_REPO",
+		},
+		cli.StringFlag{
+			Name:   "repo.owner",
+			Usage:  "repository owner",
+			EnvVar: "DRONE_REPO_OWNER",
+		},
+		cli.StringFlag{
+			Name:   "repo.name",
+			Usage:  "repository name",
+			EnvVar: "DRONE_REPO_NAME",
+		},
+		cli.StringFlag{
+			Name:   "repo.link",
+			Usage:  "repository link",
+			EnvVar: "DRONE_REPO_LINK",
+		},
+		cli.StringFlag{
+			Name:   "repo.avatar",
+			Usage:  "repository avatar",
+			EnvVar: "DRONE_REPO_AVATAR",
+		},
+		cli.StringFlag{
+			Name:   "repo.branch",
+			Usage:  "repository default branch",
+			EnvVar: "DRONE_REPO_BRANCH",
+		},
+		cli.BoolFlag{
+			Name:   "repo.private",
+			Usage:  "repository is private",
+			EnvVar: "DRONE_REPO_PRIVATE",
+		},
+		cli.BoolFlag{
+			Name:   "repo.trusted",
+			Usage:  "repository is trusted",
+			EnvVar: "DRONE_REPO_TRUSTED",
+		},
 
-	// Repository name should have gcr prefix
-	if len(vargs.Registry) == 0 {
-		vargs.Registry = "gcr.io"
+		//
+		// commit args
+		//
+
+		cli.StringFlag{
+			Name:   "remote.url",
+			Usage:  "git remote url",
+			EnvVar: "DRONE_REMOTE_URL",
+		},
+		cli.StringFlag{
+			Name:   "commit.sha",
+			Usage:  "git commit sha",
+			EnvVar: "DRONE_COMMIT_SHA",
+		},
+		cli.StringFlag{
+			Name:   "commit.ref",
+			Value:  "refs/heads/master",
+			Usage:  "git commit ref",
+			EnvVar: "DRONE_COMMIT_REF",
+		},
+		cli.StringFlag{
+			Name:   "commit.branch",
+			Value:  "master",
+			Usage:  "git commit branch",
+			EnvVar: "DRONE_COMMIT_BRANCH",
+		},
+		cli.StringFlag{
+			Name:   "commit.message",
+			Usage:  "git commit message",
+			EnvVar: "DRONE_COMMIT_MESSAGE",
+		},
+		cli.StringFlag{
+			Name:   "commit.link",
+			Usage:  "git commit link",
+			EnvVar: "DRONE_COMMIT_LINK",
+		},
+		cli.StringFlag{
+			Name:   "commit.author.name",
+			Usage:  "git author name",
+			EnvVar: "DRONE_COMMIT_AUTHOR",
+		},
+		cli.StringFlag{
+			Name:   "commit.author.email",
+			Usage:  "git author email",
+			EnvVar: "DRONE_COMMIT_AUTHOR_EMAIL",
+		},
+		cli.StringFlag{
+			Name:   "commit.author.avatar",
+			Usage:  "git author avatar",
+			EnvVar: "DRONE_COMMIT_AUTHOR_AVATAR",
+		},
+
+		//
+		// build args
+		//
+
+		cli.StringFlag{
+			Name:   "build.event",
+			Value:  "push",
+			Usage:  "build event",
+			EnvVar: "DRONE_BUILD_EVENT",
+		},
+		cli.IntFlag{
+			Name:   "build.number",
+			Usage:  "build number",
+			EnvVar: "DRONE_BUILD_NUMBER",
+		},
+		cli.IntFlag{
+			Name:   "build.created",
+			Usage:  "build created",
+			EnvVar: "DRONE_BUILD_CREATED",
+		},
+		cli.IntFlag{
+			Name:   "build.started",
+			Usage:  "build started",
+			EnvVar: "DRONE_BUILD_STARTED",
+		},
+		cli.IntFlag{
+			Name:   "build.finished",
+			Usage:  "build finished",
+			EnvVar: "DRONE_BUILD_FINISHED",
+		},
+		cli.StringFlag{
+			Name:   "build.status",
+			Usage:  "build status",
+			Value:  "success",
+			EnvVar: "DRONE_BUILD_STATUS",
+		},
+		cli.StringFlag{
+			Name:   "build.link",
+			Usage:  "build link",
+			EnvVar: "DRONE_BUILD_LINK",
+		},
+		cli.StringFlag{
+			Name:   "build.deploy",
+			Usage:  "build deployment target",
+			EnvVar: "DRONE_DEPLOY_TO",
+		},
+		cli.BoolFlag{
+			Name:   "yaml.verified",
+			Usage:  "build yaml is verified",
+			EnvVar: "DRONE_YAML_VERIFIED",
+		},
+		cli.BoolFlag{
+			Name:   "yaml.signed",
+			Usage:  "build yaml is signed",
+			EnvVar: "DRONE_YAML_SIGNED",
+		},
+
+		//
+		// prev build args
+		//
+
+		cli.IntFlag{
+			Name:   "prev.build.number",
+			Usage:  "previous build number",
+			EnvVar: "DRONE_PREV_BUILD_NUMBER",
+		},
+		cli.StringFlag{
+			Name:   "prev.build.status",
+			Usage:  "previous build status",
+			EnvVar: "DRONE_PREV_BUILD_STATUS",
+		},
+		cli.StringFlag{
+			Name:   "prev.commit.sha",
+			Usage:  "previous build sha",
+			EnvVar: "DRONE_PREV_COMMIT_SHA",
+		},
+		//
+		// gcr plugin params
+		//
+
+		cli.StringFlag{
+			Name:   "plugin.registry",
+			Usage:  "gcr plugin target registry",
+			EnvVar: "PLUGIN_REGISTRY",
+		},
+		cli.StringFlag{
+			Name:   "plugin.token",
+			Usage:  "gcr plugin gcloud auth token",
+			EnvVar: "PLUGIN_REGISTRY",
+		},
+		cli.StringFlag{
+			Name:   "plugin.repo",
+			Usage:  "gcr plugin target repo",
+			EnvVar: "PLUGIN_REPO",
+		},
+		cli.StringFlag{
+			Name:   "plugin.tag",
+			Usage:  "gcr plugin docker image tags",
+			EnvVar: "PLUGIN_TAG",
+		},
+		cli.StringFlag{
+			Name:   "plugin.file",
+			Usage:  "gcr plugin docker file name (Default 'Dockerfile')",
+			EnvVar: "PLUGIN_FILE",
+		},
+		cli.StringFlag{
+			Name:   "plugin.context",
+			Usage:  "gcr plugin docker execution context (path)",
+			EnvVar: "PLUGIN_CONTEXT",
+		},
+		cli.StringFlag{
+			Name:   "plugin.storage",
+			Usage:  "gcr plugin docker storage driver",
+			EnvVar: "PLUGIN_STORAGE",
+		},
 	}
-	// Set the Dockerfile name
-	if len(vargs.File) == 0 {
-		vargs.File = "Dockerfile"
-	}
-	// Set the Context value
-	if len(vargs.Context) == 0 {
-		vargs.Context = "."
-	}
-	// Set the Tag value
-	if vargs.Tag.Len() == 0 {
-		vargs.Tag = StrSlice{[]string{"latest"}}
-	}
-	// Concat the Registry URL and the Repository name if necessary
-	if strings.Count(vargs.Repo, "/") == 1 {
-		vargs.Repo = fmt.Sprintf("%s/%s", vargs.Registry, vargs.Repo)
-	}
-	// Trim any spaces or newlines from the token
-	vargs.Token = strings.TrimSpace(vargs.Token)
 
-	go func() {
-		args := []string{"daemon"}
-
-		if len(vargs.Storage) != 0 {
-			args = append(args, "-s", vargs.Storage)
-		}
-
-		cmd := exec.Command("/usr/bin/docker", args...)
-		if os.Getenv("DOCKER_LAUNCH_DEBUG") == "true" {
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-		} else {
-			cmd.Stdout = ioutil.Discard
-			cmd.Stderr = ioutil.Discard
-		}
-		trace(cmd)
-		cmd.Run()
-	}()
-
-	// ping Docker until available
-	for i := 0; i < 3; i++ {
-		cmd := exec.Command("/usr/bin/docker", "info")
-		cmd.Stdout = ioutil.Discard
-		cmd.Stderr = ioutil.Discard
-		err := cmd.Run()
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second * 5)
-	}
-
-	// Login to Docker
-	cmd := exec.Command("/usr/bin/docker", "login", "-u", "_json_key", "-p", vargs.Token, "-e", "chunkylover53@aol.com", vargs.Registry)
-	cmd.Dir = workspace.Path
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("Login failed.")
-		os.Exit(1)
-	}
-
-	// Build the container
-	cmd = exec.Command("/usr/bin/docker", "build", "--pull=true", "--rm=true", "-f", vargs.File, "-t", build.Commit, vargs.Context)
-	cmd.Dir = workspace.Path
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	trace(cmd)
-	err = cmd.Run()
-	if err != nil {
-		os.Exit(1)
-	}
-
-	// Creates image tags
-	for _, tag := range vargs.Tag.Slice() {
-		// create the full tag name
-		tag_ := fmt.Sprintf("%s:%s", vargs.Repo, tag)
-		if tag == "latest" {
-			tag_ = vargs.Repo
-		}
-
-		// tag the build image sha
-		cmd = exec.Command("/usr/bin/docker", "tag", build.Commit, tag_)
-		cmd.Dir = workspace.Path
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		trace(cmd)
-		err = cmd.Run()
-		if err != nil {
-			os.Exit(1)
-		}
-	}
-
-	// Push the image and tags to the registry
-	cmd = exec.Command("/usr/bin/docker", "push", vargs.Repo)
-	cmd.Dir = workspace.Path
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	trace(cmd)
-	err = cmd.Run()
-	if err != nil {
-		os.Exit(1)
-	}
+	app.Run(os.Args)
 }
 
-// Trace writes each command to standard error (preceded by a ‘$ ’) before it
-// is executed. Used for debugging your build.
-func trace(cmd *exec.Cmd) {
-	fmt.Println("$", strings.Join(cmd.Args, " "))
+func run(c *cli.Context) {
+	plugin := Plugin{
+		Repo: Repo{
+			Owner:   c.String("repo.owner"),
+			Name:    c.String("repo.name"),
+			Link:    c.String("repo.link"),
+			Avatar:  c.String("repo.avatar"),
+			Branch:  c.String("repo.branch"),
+			Private: c.Bool("repo.private"),
+			Trusted: c.Bool("repo.trusted"),
+		},
+		Build: Build{
+			Number:   c.Int("build.number"),
+			Event:    c.String("build.event"),
+			Status:   c.String("build.status"),
+			Deploy:   c.String("build.deploy"),
+			Created:  int64(c.Int("build.created")),
+			Started:  int64(c.Int("build.started")),
+			Finished: int64(c.Int("build.finished")),
+			Link:     c.String("build.link"),
+		},
+		Commit: Commit{
+			Remote:  c.String("remote.url"),
+			Sha:     c.String("commit.sha"),
+			Ref:     c.String("commit.sha"),
+			Link:    c.String("commit.link"),
+			Branch:  c.String("commit.branch"),
+			Message: c.String("commit.message"),
+			Author: Author{
+				Name:   c.String("commit.author.name"),
+				Email:  c.String("commit.author.email"),
+				Avatar: c.String("commit.author.avatar"),
+			},
+		},
+		Config: Config{
+			// plugin-specific parameters
+			Registry: c.String("vargs.registry"),
+			Token:    strings.TrimSpace(c.String("vargs.token")),
+			Repo:     c.String("vargs.repo"),
+			Tag:      StrSlice{c.StringSlice("vargs.tag")},
+			File:     c.String("vargs.file"),
+			Context:  c.String("vargs.context"),
+			Storage:  c.String("vargs.storage_driver"),
+		},
+	}
+
+	if err := plugin.Exec(); err != nil {
+		// Repository name should have gcr prefix
+		if len(plugin.Config.Registry) == 0 {
+			plugin.Config.Registry = "gcr.io"
+		}
+		// Set the Dockerfile name
+		if len(plugin.Config.File) == 0 {
+			plugin.Config.File = "Dockerfile"
+		}
+		// Set the Context value
+		if len(plugin.Config.Context) == 0 {
+			plugin.Config.Context = "."
+		}
+		// Set the Tag value
+		if plugin.Config.Tag.Len() == 0 {
+			plugin.Config.Tag = StrSlice{[]string{"latest"}}
+		}
+		// Concat the Registry URL and the Repository name if necessary
+		if strings.Count(plugin.Config.Repo, "/") == 1 {
+			plugin.Config.Repo = fmt.Sprintf("%s/%s", plugin.Config.Registry, plugin.Config.Repo)
+		}
+
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
