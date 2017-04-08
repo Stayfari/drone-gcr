@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,41 +12,8 @@ import (
 )
 
 type (
-	Repo struct {
-		Owner   string
-		Name    string
-		Link    string
-		Avatar  string
-		Branch  string
-		Private bool
-		Trusted bool
-	}
-
-	Build struct {
-		Number   int
-		Event    string
-		Status   string
-		Deploy   string
-		Created  int64
-		Started  int64
-		Finished int64
-		Link     string
-	}
-
 	Commit struct {
-		Remote  string
-		Sha     string
-		Ref     string
-		Link    string
-		Branch  string
-		Message string
-		Author  Author
-	}
-
-	Author struct {
-		Name   string
-		Email  string
-		Avatar string
+		Sha string
 	}
 
 	Config struct {
@@ -60,13 +28,12 @@ type (
 	}
 
 	Plugin struct {
-		Repo   Repo
-		Build  Build
 		Commit Commit
 		Config Config
 	}
 )
 
+//Keep docker paths as constant to highlight shift from dcoker -d to dockerd for docker daemon invokation
 const (
 	//Docker daemon and client path are the same for this version of docker.
 	dockerClientFullPath = "/usr/bin/docker"
@@ -95,6 +62,8 @@ func (p Plugin) Exec() error {
 		cmd.Run()
 	}()
 
+	var dockerInfoSucceeded = false
+
 	// ping Docker until available
 	for i := 0; i < 3; i++ {
 		cmd := exec.Command(dockerClientFullPath, "info")
@@ -102,10 +71,17 @@ func (p Plugin) Exec() error {
 		cmd.Stderr = ioutil.Discard
 		err := cmd.Run()
 		if err == nil {
-			log.Println("Docker Daemon online.")
+			dockerInfoSucceeded = true
 			break
 		}
 		time.Sleep(time.Second * 5)
+	}
+
+	//Added test to make sure that docker info succeeded before proceeding.
+	if dockerInfoSucceeded {
+		log.Println("Docker Daemon is running.")
+	} else {
+		return errors.New("Unable to detect that docker daemon is running. Docker info loop timed out.")
 	}
 
 	// Login to Docker
