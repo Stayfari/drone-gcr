@@ -93,6 +93,7 @@ func (p Plugin) Exec() error {
 		cmd.Stderr = ioutil.Discard
 		err := cmd.Run()
 		if err == nil {
+			fmt.Println("Docker Daemon online.")
 			break
 		}
 		time.Sleep(time.Second * 5)
@@ -105,7 +106,7 @@ func (p Plugin) Exec() error {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("Login failed.")
+		fmt.Println("Login failed: %v", err)
 		os.Exit(1)
 	}
 
