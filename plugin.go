@@ -68,7 +68,7 @@ type (
 
 func (p Plugin) Exec() error {
 	go func() {
-		args := []string{"daemon"}
+		args := []string{"-d"}
 
 		if len(p.Config.Storage) != 0 {
 			args = append(args, "-s", p.Config.Storage)
