@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -93,7 +94,7 @@ func (p Plugin) Exec() error {
 		cmd.Stderr = ioutil.Discard
 		err := cmd.Run()
 		if err == nil {
-			fmt.Println("Docker Daemon online.")
+			log.Println("Docker Daemon online.")
 			break
 		}
 		time.Sleep(time.Second * 5)
