@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -238,6 +239,7 @@ func main() {
 }
 
 func run(c *cli.Context) {
+	log.Printf("CLI Context: %+v", c)
 	plugin := Plugin{
 		Repo: Repo{
 			Owner:   c.String("repo.owner"),
