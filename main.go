@@ -199,37 +199,37 @@ func main() {
 		//
 
 		cli.StringFlag{
-			Name:   "plugin.registry",
+			Name:   "registry",
 			Usage:  "gcr plugin target registry",
 			EnvVar: "PLUGIN_REGISTRY",
 		},
 		cli.StringFlag{
-			Name:   "plugin.token",
+			Name:   "token",
 			Usage:  "gcr plugin gcloud auth token",
 			EnvVar: "PLUGIN_REGISTRY",
 		},
 		cli.StringFlag{
-			Name:   "plugin.repo",
+			Name:   "repo",
 			Usage:  "gcr plugin target repo",
 			EnvVar: "PLUGIN_REPO",
 		},
 		cli.StringFlag{
-			Name:   "plugin.tag",
+			Name:   "tag",
 			Usage:  "gcr plugin docker image tags",
 			EnvVar: "PLUGIN_TAG",
 		},
 		cli.StringFlag{
-			Name:   "plugin.file",
+			Name:   "file",
 			Usage:  "gcr plugin docker file name (Default 'Dockerfile')",
 			EnvVar: "PLUGIN_FILE",
 		},
 		cli.StringFlag{
-			Name:   "plugin.context",
+			Name:   "context",
 			Usage:  "gcr plugin docker execution context (path)",
 			EnvVar: "PLUGIN_CONTEXT",
 		},
 		cli.StringFlag{
-			Name:   "plugin.storage",
+			Name:   "storage",
 			Usage:  "gcr plugin docker storage driver",
 			EnvVar: "PLUGIN_STORAGE",
 		},
