@@ -67,15 +67,20 @@ type (
 	}
 )
 
+const (
+	dockerDaemonPath = "/usr/local/bin/dockerd"
+	dockerClientPath = "/usr/local/bin/docker"
+)
+
 func (p Plugin) Exec() error {
 	go func() {
-		args := []string{"-d"}
+		args := []string{}
 
 		if len(p.Config.Storage) != 0 {
 			args = append(args, "-s", p.Config.Storage)
 		}
 
-		cmd := exec.Command("/usr/bin/docker", args...)
+		cmd := exec.Command(dockerDaemonPath, args...)
 		if os.Getenv("DOCKER_LAUNCH_DEBUG") == "true" {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -89,7 +94,7 @@ func (p Plugin) Exec() error {
 
 	// ping Docker until available
 	for i := 0; i < 3; i++ {
-		cmd := exec.Command("/usr/bin/docker", "info")
+		cmd := exec.Command(dockerClientPath, "info")
 		cmd.Stdout = ioutil.Discard
 		cmd.Stderr = ioutil.Discard
 		err := cmd.Run()
@@ -101,7 +106,7 @@ func (p Plugin) Exec() error {
 	}
 
 	// Login to Docker
-	cmd := exec.Command("/usr/bin/docker", "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
+	cmd := exec.Command(dockerClientPath, "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -112,7 +117,7 @@ func (p Plugin) Exec() error {
 	}
 
 	// Build the container
-	cmd = exec.Command("/usr/bin/docker", "build", "--pull=true", "--rm=true", "-f", p.Config.File, "-t", p.Commit.Sha, p.Config.Context)
+	cmd = exec.Command(dockerClientPath, "build", "--pull=true", "--rm=true", "-f", p.Config.File, "-t", p.Commit.Sha, p.Config.Context)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -131,7 +136,7 @@ func (p Plugin) Exec() error {
 		}
 
 		// tag the build image sha
-		cmd = exec.Command("/usr/bin/docker", "tag", p.Commit.Sha, tag_)
+		cmd = exec.Command(dockerClientPath, "tag", p.Commit.Sha, tag_)
 		// cmd.Dir = workspace.Path
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -143,7 +148,7 @@ func (p Plugin) Exec() error {
 	}
 
 	// Push the image and tags to the registry
-	cmd = exec.Command("/usr/bin/docker", "push", p.Config.Repo)
+	cmd = exec.Command(dockerClientPath, "push", p.Config.Repo)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
