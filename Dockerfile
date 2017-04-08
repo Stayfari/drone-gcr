@@ -1,14 +1,9 @@
 # Docker image for the google container registry plugin
 #
 #     docker build --rm=true -t plugins/drone-gcr .
-FROM rancher/docker:1.10.0
-
-#Needed to allow login to
+FROM docker:17.04.0-dind
+# RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 RUN mkdir /home/root
 ENV HOME="/home/root"
-# RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-# ADD drone-gcr /bin/
-ADD drone-gcr /go/bin/
-VOLUME /var/lib/docker
-# ENTRYPOINT ["/bin/drone-gcr"]
-ENTRYPOINT ["/go/bin/drone-gcr"]
+ADD drone-gcr /bin/
+ENTRYPOINT ["/bin/drone-gcr"]
