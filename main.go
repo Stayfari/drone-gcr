@@ -235,11 +235,13 @@ func main() {
 		},
 	}
 
+	log.Printf("Args: %+v\n", os.Args)
+	log.Printf("Environment: %v\n", os.Environ())
+
 	app.Run(os.Args)
 }
 
 func run(c *cli.Context) {
-	log.Printf("CLI Context: %+v", c)
 	plugin := Plugin{
 		Repo: Repo{
 			Owner:   c.String("repo.owner"),
