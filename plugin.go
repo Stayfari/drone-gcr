@@ -107,7 +107,7 @@ func (p Plugin) Exec() error {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("Login failed: %v", err)
+		fmt.Printf("Login failed: %v\n", err)
 		os.Exit(1)
 	}
 
