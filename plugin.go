@@ -68,22 +68,22 @@ type (
 )
 
 const (
-	// dockerDaemonPath = "/usr/local/bin/dockerd"
-	// dockerClientPath = "/usr/local/bin/docker"
-	dockerClientPath = "/usr/bin/docker"
-	dockerDaemonPath = "/usr/bin/docker"
+	//Docker daemon and client path are the same for this version of docker.
+	dockerClientFullPath = "/usr/bin/docker"
+	dockerDaemonFullPath = "/usr/bin/docker"
 )
 
 func (p Plugin) Exec() error {
 	go func() {
-		// args := []string{}
+		//NOTE: No arguments needed if using dockerd. Could not get docker login to work with newer docker release (non-interactive login error)
+		//args := []string{}
 		args := []string{"daemon"}
 
 		if len(p.Config.Storage) != 0 {
 			args = append(args, "-s", p.Config.Storage)
 		}
 
-		cmd := exec.Command(dockerDaemonPath, args...)
+		cmd := exec.Command(dockerDaemonFullPath, args...)
 		if os.Getenv("DOCKER_LAUNCH_DEBUG") == "true" {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -97,7 +97,7 @@ func (p Plugin) Exec() error {
 
 	// ping Docker until available
 	for i := 0; i < 3; i++ {
-		cmd := exec.Command(dockerClientPath, "info")
+		cmd := exec.Command(dockerClientFullPath, "info")
 		cmd.Stdout = ioutil.Discard
 		cmd.Stderr = ioutil.Discard
 		err := cmd.Run()
@@ -108,21 +108,18 @@ func (p Plugin) Exec() error {
 		time.Sleep(time.Second * 5)
 	}
 
-	log.Printf("Registry %+v", p.Config)
-
 	// Login to Docker
-	cmd := exec.Command(dockerClientPath, "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
+	cmd := exec.Command(dockerClientFullPath, "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("Login failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("Login failed: %v\n", err)
 	}
 
 	// Build the container
-	cmd = exec.Command(dockerClientPath, "build", "--pull=true", "--rm=true", "-f", p.Config.File, "-t", p.Commit.Sha, p.Config.Context)
+	cmd = exec.Command(dockerClientFullPath, "build", "--pull=true", "--rm=true", "-f", p.Config.File, "-t", p.Commit.Sha, p.Config.Context)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -141,7 +138,7 @@ func (p Plugin) Exec() error {
 		}
 
 		// tag the build image sha
-		cmd = exec.Command(dockerClientPath, "tag", p.Commit.Sha, tag_)
+		cmd = exec.Command(dockerClientFullPath, "tag", p.Commit.Sha, tag_)
 		// cmd.Dir = workspace.Path
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -153,7 +150,7 @@ func (p Plugin) Exec() error {
 	}
 
 	// Push the image and tags to the registry
-	cmd = exec.Command(dockerClientPath, "push", p.Config.Repo)
+	cmd = exec.Command(dockerClientFullPath, "push", p.Config.Repo)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

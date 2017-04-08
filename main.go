@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/codegangsta/cli"
-	_ "github.com/joho/godotenv/autoload"
 )
 
 var version string // build number set at compile-time
@@ -196,6 +194,7 @@ func main() {
 		},
 		//
 		// gcr plugin params
+		// Preserve original docker-gcr interface.
 		//
 
 		cli.StringFlag{
@@ -234,9 +233,6 @@ func main() {
 			EnvVar: "PLUGIN_STORAGE_DRIVER",
 		},
 	}
-
-	log.Printf("Args: %+v\n", os.Args)
-	log.Printf("Environment: %v\n", os.Environ())
 
 	app.Run(os.Args)
 }
@@ -309,7 +305,7 @@ func run(c *cli.Context) {
 	}
 
 	if err := plugin.Exec(); err != nil {
-		fmt.Println(err)
+		fmt.Printf("Unable to execute plugin: %v\n", err)
 		os.Exit(1)
 	}
 }
