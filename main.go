@@ -275,13 +275,13 @@ func run(c *cli.Context) {
 		},
 		Config: Config{
 			// plugin-specific parameters
-			Registry: c.String("vargs.registry"),
-			Token:    strings.TrimSpace(c.String("vargs.token")),
-			Repo:     c.String("vargs.repo"),
-			Tag:      StrSlice{c.StringSlice("vargs.tag")},
-			File:     c.String("vargs.file"),
-			Context:  c.String("vargs.context"),
-			Storage:  c.String("vargs.storage_driver"),
+			Registry: c.String("registry"),
+			Token:    strings.TrimSpace(c.String("token")),
+			Repo:     c.String("repo"),
+			Tag:      StrSlice{c.StringSlice("tag")},
+			File:     c.String("file"),
+			Context:  c.String("context"),
+			Storage:  c.String("storage_driver"),
 		},
 	}
 
