@@ -213,7 +213,7 @@ func main() {
 			Usage:  "gcr plugin target repo",
 			EnvVar: "PLUGIN_REPO",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Name:   "tag",
 			Usage:  "gcr plugin docker image tags",
 			EnvVar: "PLUGIN_TAG",
