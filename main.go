@@ -206,7 +206,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "token",
 			Usage:  "gcr plugin gcloud auth token",
-			EnvVar: "PLUGIN_REGISTRY",
+			EnvVar: "PLUGIN_TOKEN",
 		},
 		cli.StringFlag{
 			Name:   "repo",
@@ -229,9 +229,9 @@ func main() {
 			EnvVar: "PLUGIN_CONTEXT",
 		},
 		cli.StringFlag{
-			Name:   "storage",
+			Name:   "storage_driver",
 			Usage:  "gcr plugin docker storage driver",
-			EnvVar: "PLUGIN_STORAGE",
+			EnvVar: "PLUGIN_STORAGE_DRIVER",
 		},
 	}
 
@@ -287,28 +287,28 @@ func run(c *cli.Context) {
 		},
 	}
 
-	if err := plugin.Exec(); err != nil {
-		// Repository name should have gcr prefix
-		if len(plugin.Config.Registry) == 0 {
-			plugin.Config.Registry = "gcr.io"
-		}
-		// Set the Dockerfile name
-		if len(plugin.Config.File) == 0 {
-			plugin.Config.File = "Dockerfile"
-		}
-		// Set the Context value
-		if len(plugin.Config.Context) == 0 {
-			plugin.Config.Context = "."
-		}
-		// Set the Tag value
-		if plugin.Config.Tag.Len() == 0 {
-			plugin.Config.Tag = StrSlice{[]string{"latest"}}
-		}
-		// Concat the Registry URL and the Repository name if necessary
-		if strings.Count(plugin.Config.Repo, "/") == 1 {
-			plugin.Config.Repo = fmt.Sprintf("%s/%s", plugin.Config.Registry, plugin.Config.Repo)
-		}
+	// Repository name should have gcr prefix
+	if len(plugin.Config.Registry) == 0 {
+		plugin.Config.Registry = "gcr.io"
+	}
+	// Set the Dockerfile name
+	if len(plugin.Config.File) == 0 {
+		plugin.Config.File = "Dockerfile"
+	}
+	// Set the Context value
+	if len(plugin.Config.Context) == 0 {
+		plugin.Config.Context = "."
+	}
+	// Set the Tag value
+	if plugin.Config.Tag.Len() == 0 {
+		plugin.Config.Tag = StrSlice{[]string{"latest"}}
+	}
+	// Concat the Registry URL and the Repository name if necessary
+	if strings.Count(plugin.Config.Repo, "/") == 1 {
+		plugin.Config.Repo = fmt.Sprintf("%s/%s", plugin.Config.Registry, plugin.Config.Repo)
+	}
 
+	if err := plugin.Exec(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

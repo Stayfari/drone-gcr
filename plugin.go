@@ -108,7 +108,7 @@ func (p Plugin) Exec() error {
 		time.Sleep(time.Second * 5)
 	}
 
-	log.Printf("Registry %v", p.Config)
+	log.Printf("Registry %+v", p.Config)
 
 	// Login to Docker
 	cmd := exec.Command(dockerClientPath, "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
