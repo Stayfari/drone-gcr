@@ -109,7 +109,7 @@ func (p Plugin) Exec() error {
 	}
 
 	// Login to Docker
-	cmd := exec.Command(dockerClientPath, "login", "-u", "_json_key", "-p", p.Config.Token, "-e", "chunkylover53@aol.com", p.Config.Registry)
+	cmd := exec.Command(dockerClientPath, "login", "-u", "_json_key", "-p", p.Config.Token, p.Config.Registry)
 	// cmd.Dir = workspace.Path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
