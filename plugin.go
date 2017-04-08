@@ -68,13 +68,16 @@ type (
 )
 
 const (
-	dockerDaemonPath = "/usr/local/bin/dockerd"
-	dockerClientPath = "/usr/local/bin/docker"
+	// dockerDaemonPath = "/usr/local/bin/dockerd"
+	// dockerClientPath = "/usr/local/bin/docker"
+	dockerClientPath = "/usr/bin/docker"
+	dockerDaemonPath = "/usr/bin/docker"
 )
 
 func (p Plugin) Exec() error {
 	go func() {
-		args := []string{}
+		// args := []string{}
+		args := []string{"daemon"}
 
 		if len(p.Config.Storage) != 0 {
 			args = append(args, "-s", p.Config.Storage)
