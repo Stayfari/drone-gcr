@@ -1,7 +1,7 @@
 # Docker image for the google container registry plugin
 #
 #     docker build --rm=true -t plugins/drone-gcr .
-FROM rancher/docker:1.10.0
+FROM rancher/docker:1.11.2
 
 ADD drone-gcr /go/bin/
 VOLUME /var/lib/docker
